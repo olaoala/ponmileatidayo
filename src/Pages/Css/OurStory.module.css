@@ -1,0 +1,31 @@
+/* customStyles.css */
+/* .slick-slide {
+    display: flex !important;
+    flex-direction: column !important;
+  }
+  
+  @media (min-width: 768px) {
+    .slick-slide {
+      flex-direction: row !important;
+    }
+  } */
+
+  /* OurStory.module.css */
+    .slick {
+        display: flex !important; 
+        justify-content: center; 
+        align-items: center;   
+        padding: 2em; 
+    }
+    
+    .slick-slide img {
+        max-width: 100%; 
+        height: auto;
+    }
+    
+    .slick-dots {
+        bottom: -25px;
+    }
+
+ 
+  

@@ -1,0 +1,109 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  
+}
+body {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  width: 100%;
+  overflow-x: hidden;
+padding: 0;
+}
+
+code {
+  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
+    monospace;
+}
+
+@font-face {
+  font-family: 'Dance';
+  src: url('/src/Fonts/danceText.ttf') format('woff2'), /* Adjust path as necessary */
+       url('/src/Fonts/danceText.ttf') format('woff');
+  font-weight: normal;
+  font-style: normal;
+}
+@font-face {
+  font-family: 'pinyon';
+  src: url('/src/Fonts/Pinyon.ttf') format('woff2'), /* Adjust path as necessary */
+       url('/src/Fonts/Pinyon.ttf') format('woff');
+  font-weight: normal;
+  font-style: normal;
+}
+@font-face {
+  font-family: 'cardo';
+  src: url('/src/Fonts/Cardo.ttf') format('woff2'), /* Adjust path as necessary */
+       url('/src/Fonts/Cardo.ttf') format('woff');
+  font-weight: normal;
+  font-style: normal;
+}
+@font-face {
+  font-family: 'Nunito';
+  src: url('/src/Fonts/Nunito.ttf') format('woff2'), /* Adjust path as necessary */
+       url('/src/Fonts/Nunito.ttf') format('woff');
+  font-weight: normal;
+  font-style: normal;
+}
+@keyframes fadeInOut {
+  0%, 100% { opacity: 0; }
+  50% { opacity: 1; }
+}
+
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+.infinity-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  background-color: #f0f0f0;
+}
+
+.infinity {
+  width: 200px;
+  height: 100px;
+  border: 5px solid #3490dc;
+  border-radius: 50%;
+  position: relative;
+  animation: infinity 4s linear infinite;
+}
+
+.infinity::before,
+.infinity::after {
+  content: '';
+  position: absolute;
+  border: 5px solid #3490dc;
+  border-radius: 50%;
+}
+
+.infinity::before {
+  width: 200px;
+  height: 100px;
+  top: -50px;
+  left: -100px;
+}
+
+.infinity::after {
+  width: 200px;
+  height: 100px;
+  top: 50px;
+  left: -100px;
+}
+
+@keyframes infinity {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
