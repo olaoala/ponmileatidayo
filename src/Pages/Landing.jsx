@@ -7,6 +7,7 @@ const LandingPage = () => {
   const [showVideo, setShowVideo] = useState(false); // Track video visibility
   const greetings = useMemo(() => ['Hey!', 'Do you know what true love feels like.', 'Hmm... Are you sure??', 'Come, let me show you.'], []);
   const videoRef = useRef(null); // Reference to the video element
+  const [videoLoaded, setVideoLoaded] = useState(false); // Track if the video is loaded
 
   const navigate = useNavigate();
 
@@ -32,10 +33,10 @@ const LandingPage = () => {
   }, [greetings]);
 
   useEffect(() => {
-    // Set timeout to navigate to home after the video finishes playing
-    if (showVideo) {
+    // Play the video only after it's fully loaded and visible
+    if (showVideo && videoLoaded) {
       videoRef.current.play(); // Start the video playback
-      const videoDuration = 15000; // 15 seconds
+      const videoDuration = 15000; // Set a default video duration of 15 seconds
 
       const timeout = setTimeout(() => {
         navigateToHome(); // Navigate to home after the video finishes
@@ -43,25 +44,36 @@ const LandingPage = () => {
 
       return () => clearTimeout(timeout);
     }
-  }, [showVideo, navigateToHome]);
+  }, [showVideo, videoLoaded, navigateToHome]);
+
+  const handleVideoCanPlay = () => {
+    setVideoLoaded(true); // Ensure the video is ready to play
+  };
 
   return (
     <div className="h-screen bg-white flex justify-center items-center relative">
-       <video
-        ref={videoRef}
-        autoPlay
-        muted
-        className={`absolute top-0 left-0 w-full h-full object-cover ${showVideo ? 'hidden' : ''}`}
-        onEnded={navigateToHome} // Navigate to home when video ends
-      >
-        <source src={videoSource} type="video/mp4" />
-        Your browser does not support the video tag.
-      </video>
+      {/* Video Element */}
+      {showVideo && (
+        <video
+          ref={videoRef}
+          autoPlay
+          muted
+          playsInline // Ensure autoplay works on mobile browsers
+          onCanPlay={handleVideoCanPlay} // Trigger when video is ready to play
+          className="absolute top-0 left-0 w-full h-full object-cover"
+          onEnded={navigateToHome} // Navigate to home when video ends
+        >
+          <source src={videoSource} type="video/mp4" />
+          Your browser does not support the video tag.
+        </video>
+      )}
 
-      <p className={`text-lg font-bold text-rose-gold animate-pulse ${showVideo ? '' : 'hidden'}`}>
-        {greetings[greetingIndex]}
-      </p>
-     
+      {/* Greeting Text */}
+      {!showVideo && (
+        <p className="text-lg font-bold text-rose-gold animate-pulse">
+          {greetings[greetingIndex]}
+        </p>
+      )}
     </div>
   );
 };
