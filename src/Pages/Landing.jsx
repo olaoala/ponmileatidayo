@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import videoSource from '../Assets/1023.webm'; // Import the video directly
+import videoSource from '../Assets/1025.mp4'; // Import the video directly
 
 const LandingPage = () => {
   const [greetingIndex, setGreetingIndex] = useState(0); // Track the current greeting index
@@ -46,11 +46,14 @@ const LandingPage = () => {
           ref={videoRef}
           autoPlay
           muted
+          preload="auto"
           playsInline // Ensure autoplay works on mobile browsers
           className="absolute top-0 left-0 w-full h-full object-cover"
           onEnded={handleVideoEnd} // Trigger when video ends to start greetings
         >
-          <source src={videoSource} type="video/mp4" />
+          <source src='../Assets/1023.webm' type="video/webm" />
+          <source src="../Assets/1025.mp4" type="video/mp4" />
+
           Your browser does not support the video tag.
         </video>
       )}
