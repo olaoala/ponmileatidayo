@@ -53,7 +53,7 @@ const LandingPage = () => {
   return (
     <div className="h-screen bg-white flex justify-center items-center relative">
       {/* Video Element */}
-      {showVideo && (
+      {!showVideo && (
         <video
           ref={videoRef}
           autoPlay
@@ -69,7 +69,7 @@ const LandingPage = () => {
       )}
 
       {/* Greeting Text */}
-      {!showVideo && (
+      {showVideo && (
         <p className="text-lg font-bold text-rose-gold animate-pulse">
           {greetings[greetingIndex]}
         </p>
