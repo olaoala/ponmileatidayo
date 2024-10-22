@@ -28,7 +28,7 @@ const UploadPage = () => {
     });
 
     try {
-      const response = await axios.post('https://ponmileatidayo.netlify.app/home', formData, {
+      const response = await axios.post('https://ponmileatidayo.netlify.app/.netlify/functions/upload', formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
         },
