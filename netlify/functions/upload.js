@@ -2,40 +2,8 @@ const { google } = require('googleapis');
 const stream = require('stream');
 const process = require('process');
 
-// Scopes required for accessing Google Drive
 
-/**
- * Authorize with service account and get jwt client
- */
-async function authorize() {
-  try {
-    // Load the credentials from the environment variable
-    const serviceAccountCredentials = JSON.parse(
-      Buffer.from(process.env.GOOGLE_APPLICATION_CREDENTIALS, 'base64').toString('utf8')
-    );
-
-    const jwtClient = new google.auth.JWT(
-      serviceAccountCredentials.client_email,
-      null,
-      serviceAccountCredentials.private_key,
-      SCOPES
-    );
-
-    // Authorize the client
-    await jwtClient.authorize();
-    console.log('Google API authorization successful');
-
-    return jwtClient;
-  } catch (error) {
-    console.error('Error authorizing Google API:', error);
-    throw new Error('Failed to authorize Google API.');
-  }
-}
-
-const { google } = require('googleapis');
-const stream = require('stream');
 const multer = require('multer');
-const process = require('process');
 
 // Initialize Multer
 const upload = multer({ storage: multer.memoryStorage() }); // Store files in memory
@@ -47,8 +15,30 @@ const SCOPES = ['https://www.googleapis.com/auth/drive.file'];
  * Authorize with service account and get jwt client
  */
 async function authorize() {
-  // (your existing authorize function)
-}
+    try {
+      // Load the credentials from the environment variable
+      const serviceAccountCredentials = JSON.parse(
+        Buffer.from(process.env.GOOGLE_APPLICATION_CREDENTIALS, 'base64').toString('utf8')
+      );
+  
+      const jwtClient = new google.auth.JWT(
+        serviceAccountCredentials.client_email,
+        null,
+        serviceAccountCredentials.private_key,
+        SCOPES
+      );
+  
+      // Authorize the client
+      await jwtClient.authorize();
+      console.log('Google API authorization successful');
+  
+      return jwtClient;
+    } catch (error) {
+      console.error('Error authorizing Google API:', error);
+      throw new Error('Failed to authorize Google API.');
+    }
+  }
+  
 
 async function uploadFile(authClient, file) {
   try {
