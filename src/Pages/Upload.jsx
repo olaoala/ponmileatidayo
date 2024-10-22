@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import axios from 'axios';
+import { response } from 'express';
 
 const UploadPage = () => {
   const [files, setFiles] = useState([]);
@@ -41,6 +42,8 @@ const UploadPage = () => {
             'Content-Type': 'application/json',
           },
         });
+        const uploadedFileLink = response.data.viewLink;
+        console.log('File uploaded successfully:', uploadedFileLink);
         setMessage('File uploaded successfully');
       } catch (error) {
         console.error('Error uploading file:', error);
