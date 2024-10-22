@@ -51,14 +51,14 @@ const LandingPage = () => {
         ref={videoRef}
         autoPlay
         muted
-        className={`absolute top-0 left-0 w-full h-full object-cover ${showVideo ? '' : 'hidden'}`}
+        className={`absolute top-0 left-0 w-full h-full object-cover ${showVideo ? 'hidden' : ''}`}
         onEnded={navigateToHome} // Navigate to home when video ends
       >
         <source src={videoSource} type="video/mp4" />
         Your browser does not support the video tag.
       </video>
-      
-      <p className={`text-lg font-bold text-rose-gold animate-pulse ${showVideo ? 'hidden' : ''}`}>
+
+      <p className={`text-lg font-bold text-rose-gold animate-pulse ${showVideo ? '' : 'hidden'}`}>
         {greetings[greetingIndex]}
       </p>
      
