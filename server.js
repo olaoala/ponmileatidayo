@@ -10,7 +10,7 @@ const app = express();
 const PORT = process.env.PORT || 5000;
 
 // Configure CORS to allow specific origins
-const allowedOrigins = ['http://localhost:3000', 'https://ponmile-ati-dayo.onrender.com', 'https://ayodayo.netlify.app'];
+const allowedOrigins = ['http://localhost:3000', 'https://ponmileatidayo.netlify.app/home', 'https://ayodayo.netlify.app'];
 app.use(cors({
   origin: function (origin, callback) {
     if (!origin || allowedOrigins.includes(origin)) {
