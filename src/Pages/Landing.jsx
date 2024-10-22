@@ -35,7 +35,7 @@ const LandingPage = () => {
   }, [greetings, showGreetings, navigateToHome]);
 
   const handleVideoEnd = () => {
-    setShowGreetings(true); // Show greetings after the video ends
+    setShowGreetings(true); 
   };
 
   return (
