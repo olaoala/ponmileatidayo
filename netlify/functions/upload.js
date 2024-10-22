@@ -46,18 +46,24 @@ async function uploadFile(authClient, file) {
     const bufferStream = new stream.PassThrough();
     bufferStream.end(file.buffer);
     
-    // Upload file to Google Drive
-    const response = await drive.files.create({
-      requestBody: {
-        name: file.originalname,
-        parents: [process.env.GOOGLE_DRIVE_FOLDER_ID], // Store in a specific folder if provided
-      },
-      media: {
-        mimeType: file.mimetype,
-        body: bufferStream,
-      },
-      fields: 'id, webViewLink', // Get file ID and view link
-    });
+ 
+
+    // Replace 'YOUR_FOLDER_ID' with the actual ID of the shared folder
+const FOLDER_ID = '1-1MH0lRnqtN5X5EPlkAYN5ejZv-vyT3x';
+
+// Use this ID in your file upload request
+const response = await drive.files.create({
+  requestBody: {
+    name: originalname,
+    parents: [FOLDER_ID],
+  },
+  media: {
+    mimeType: mimetype,
+    body: bufferStream,
+  },
+  fields: 'id, webViewLink',
+});
+
 
     // Make the file public
     await drive.permissions.create({
