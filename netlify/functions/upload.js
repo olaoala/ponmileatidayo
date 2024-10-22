@@ -2,6 +2,8 @@ const { google } = require('googleapis');
 const stream = require('stream');
 const process = require('process');
 const formidable = require('formidable');
+require('fs'); // Import fs module
+
 
 // Scopes required for accessing Google Drive
 const SCOPES = ['https://www.googleapis.com/auth/drive.file'];
