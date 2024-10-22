@@ -1,6 +1,10 @@
 const { google } = require('googleapis');
 const stream = require('stream');
+const multer = require('multer');
 const process = require('process');
+
+// Initialize Multer
+const upload = multer({ storage: multer.memoryStorage() }); // Store files in memory
 
 // Scopes required for accessing Google Drive
 const SCOPES = ['https://www.googleapis.com/auth/drive.file'];
@@ -9,34 +13,13 @@ const SCOPES = ['https://www.googleapis.com/auth/drive.file'];
  * Authorize with service account and get jwt client
  */
 async function authorize() {
-  try {
-    // Load the credentials from the environment variable
-    const serviceAccountCredentials = JSON.parse(
-      Buffer.from(process.env.GOOGLE_APPLICATION_CREDENTIALS, 'base64').toString('utf8')
-    );
-
-    const jwtClient = new google.auth.JWT(
-      serviceAccountCredentials.client_email,
-      null,
-      serviceAccountCredentials.private_key,
-      SCOPES
-    );
-
-    // Authorize the client
-    await jwtClient.authorize();
-    console.log('Google API authorization successful');
-
-    return jwtClient;
-  } catch (error) {
-    console.error('Error authorizing Google API:', error);
-    throw new Error('Failed to authorize Google API.');
-  }
+  // (your existing authorize function)
 }
 
 async function uploadFile(authClient, file) {
   try {
     const drive = google.drive({ version: 'v3', auth: authClient });
-
+    
     // Upload file to Google Drive
     const response = await drive.files.create({
       requestBody: {
@@ -45,7 +28,7 @@ async function uploadFile(authClient, file) {
       },
       media: {
         mimeType: file.mimetype,
-        body: file.stream, // Use the stream directly
+        body: stream.Readable.from(file.buffer), // Convert buffer to readable stream
       },
       fields: 'id, webViewLink', // Get file ID and view link
     });
@@ -70,7 +53,7 @@ async function uploadFile(authClient, file) {
 /**
  * Netlify handler function
  */
-exports.handler = async (event) => {
+exports.handler = upload.single('files'), async (event, context) => {
   try {
     // Only accept POST requests
     if (event.httpMethod !== 'POST') {
@@ -80,38 +63,25 @@ exports.handler = async (event) => {
       };
     }
 
-    // Parse the incoming file from the request body
-    const formData = new FormData(); // Create new FormData instance
-    const data = formData.parse(event.body); // Parse the incoming form data
+    // The file is available in req.file
+    const file = event.file; // Adjust this based on how the file is passed
 
-    // Loop through the files
-    const files = data.files; // Adjust based on how you parse the files
-    const links = [];
+    // Authorize the Google API client
+    const authClient = await authorize();
 
-    for (const file of files) {
-      const fileData = {
-        stream: file, // The file stream directly
-        originalname: file.name,
-        mimetype: file.mimetype,
-      };
-
-      // Authorize the Google API client
-      const authClient = await authorize();
-
-      // Upload the file
-      const viewLink = await uploadFile(authClient, fileData);
-      links.push(viewLink);
-    }
+    // Upload the file
+    const viewLink = await uploadFile(authClient, file);
 
     // Return success with the Google Drive link
     return {
       statusCode: 200,
       body: JSON.stringify({
-        message: 'Files uploaded successfully',
-        viewLinks: links,
+        message: 'File uploaded successfully',
+        viewLink: viewLink,
       }),
     };
   } catch (error) {
+    console.error('Error in handler:', error);
     return {
       statusCode: 500,
       body: JSON.stringify({
