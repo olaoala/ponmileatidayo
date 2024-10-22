@@ -1,30 +1,15 @@
-const createReadStream = require('fs').createReadStream;
+const { google } = require('googleapis');
+const stream = require('stream');
 const path = require('path');
 const process = require('process');
-const { google } = require('googleapis');
+const { createReadStream } = require('fs');
 
-// Downloaded from while creating credentials of service account
-
+// Scopes required for accessing Google Drive
 const SCOPES = ['https://www.googleapis.com/auth/drive.file'];
 
 /**
  * Authorize with service account and get jwt client
- *
  */
-// async function authorize() {
-//   const jwtClient = new google.auth.JWT(
-//     pkey.client_email,
-//     null,
-//     pkey.private_key,
-//     SCOPES
-//   )
-//   await jwtClient.authorize();
-//   return jwtClient;
-// }
-
-
-// Scopes required for accessing Google Drive
-
 async function authorize() {
   try {
     // Load the credentials from the environment variable
@@ -50,24 +35,89 @@ async function authorize() {
   }
 }
 
-module.exports = authorize;
-
-
 /**
- * Create a new file on google drive.
- * @param {OAuth2Client} authClient An authorized OAuth2 client.
+ * Upload file to Google Drive
  */
-async function uploadFile(authClient) {
-  const drive = google.drive({ version: 'v3', auth: authClient });
-
-    const file = await drive.files.create({
-      media: {
-        body: createReadStream('filename')
-      },
-      fields: 'id',
+async function uploadFile(authClient, file) {
+  try {
+    const drive = google.drive({ version: 'v3', auth: authClient });
+    
+    // Create a readable stream from the file buffer
+    const bufferStream = new stream.PassThrough();
+    bufferStream.end(file.buffer);
+    
+    // Upload file to Google Drive
+    const response = await drive.files.create({
       requestBody: {
-        name: path.basename('filename'),
+        name: file.originalname,
+        parents: [process.env.GOOGLE_DRIVE_FOLDER_ID], // Store in a specific folder if provided
+      },
+      media: {
+        mimeType: file.mimetype,
+        body: bufferStream,
+      },
+      fields: 'id, webViewLink', // Get file ID and view link
+    });
+
+    // Make the file public
+    await drive.permissions.create({
+      fileId: response.data.id,
+      requestBody: {
+        role: 'reader',
+        type: 'anyone',
       },
     });
-    console.log(file.data.id)
+
+    // Return the view link
+    return response.data.webViewLink;
+  } catch (error) {
+    console.error('Error uploading to Google Drive:', error);
+    throw new Error('Failed to upload file.');
+  }
 }
+
+/**
+ * Netlify handler function
+ */
+exports.handler = async (event) => {
+  try {
+    // Only accept POST requests
+    if (event.httpMethod !== 'POST') {
+      return {
+        statusCode: 405,
+        body: 'Method Not Allowed',
+      };
+    }
+
+    // Parse the incoming file from the request body
+    const data = JSON.parse(event.body);
+    const file = {
+      buffer: Buffer.from(data.fileContent, 'base64'), // assuming the file content is sent as base64
+      originalname: data.fileName,
+      mimetype: data.mimeType,
+    };
+
+    // Authorize the Google API client
+    const authClient = await authorize();
+
+    // Upload the file
+    const viewLink = await uploadFile(authClient, file);
+
+    // Return success with the Google Drive link
+    return {
+      statusCode: 200,
+      body: JSON.stringify({
+        message: 'File uploaded successfully',
+        viewLink: viewLink,
+      }),
+    };
+  } catch (error) {
+    return {
+      statusCode: 500,
+      body: JSON.stringify({
+        message: 'File upload failed',
+        error: error.message,
+      }),
+    };
+  }
+};

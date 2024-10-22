@@ -17,29 +17,40 @@ const UploadPage = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+  
     if (files.length === 0) {
       setMessage('Please upload at least one file.');
       return;
     }
-
-    const formData = new FormData();
-    files.forEach((file) => {
-      formData.append('photos', file); // 'photos' matches the backend field name
-    });
-
-    try {
-      const response = await axios.post('/.netlify/functions/upload', formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
-      });
-      console.log(response);
-      setMessage('Pictures uploaded successfully!');
-    } catch (error) {
-      console.error('Error:', error);
-      setMessage('Error uploading pictures. Please try again.');
-    }
+  
+    // Read the file as base64
+    const file = files[0]; // for simplicity, let's assume you're uploading one file
+    const reader = new FileReader();
+    reader.onloadend = async () => {
+      const base64File = reader.result.split(',')[1]; // Remove the data URL prefix
+  
+      const formData = {
+        fileName: file.name,
+        mimeType: file.type,
+        fileContent: base64File,
+      };
+  
+      try {
+        const response = await axios.post('/.netlify/functions/upload', formData, {
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        });
+        setMessage('File uploaded successfully');
+      } catch (error) {
+        console.error('Error uploading file:', error);
+        setMessage('File upload failed.');
+      }
+    };
+  
+    reader.readAsDataURL(file);
   };
+  
 
   return (
     <div className="flex flex-col items-center justify-center h-2/4 text-rose-dark-tint bg-gray-100 mb-10 p-4 shadow-lg rounded-lg">
