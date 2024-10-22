@@ -4,7 +4,7 @@ const process = require('process');
 const { google } = require('googleapis');
 
 // Downloaded from while creating credentials of service account
-const pkey = require('/config/servicekey.json');
+const pkey = require('../../config/servicekey.json');
 
 const SCOPES = ['https://www.googleapis.com/auth/drive.file'];
 
