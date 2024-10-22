@@ -1,10 +1,7 @@
 const { google } = require('googleapis');
 const stream = require('stream');
 const process = require('process');
-const multer = require('multer');
-
-// Initialize Multer
-const upload = multer({ storage: multer.memoryStorage() }); // Store files in memory
+const formidable = require('formidable');
 
 // Scopes required for accessing Google Drive
 const SCOPES = ['https://www.googleapis.com/auth/drive.file'];
@@ -38,7 +35,7 @@ async function authorize() {
 async function uploadFile(authClient, file) {
   try {
     const drive = google.drive({ version: 'v3', auth: authClient });
-    
+
     const response = await drive.files.create({
       requestBody: {
         name: file.originalname,
@@ -77,11 +74,12 @@ exports.handler = async (event, context) => {
     };
   }
 
+  const form = new formidable.IncomingForm();
+
   return new Promise((resolve, reject) => {
-    // Use multer to handle the file upload
-    upload.single('files')(event, context, async (err) => {
+    form.parse(event, async (err, fields, files) => {
       if (err) {
-        console.error('Multer error:', err);
+        console.error('Formidable error:', err);
         return resolve({
           statusCode: 400,
           body: JSON.stringify({ message: 'File upload failed', error: err.message }),
@@ -90,14 +88,17 @@ exports.handler = async (event, context) => {
 
       try {
         const authClient = await authorize();
+        const file = files.files[0]; // Adjust this index if you're sending multiple files
 
-        // The file is available in req.file
-        const file = context.file; // This will be set by multer
+        // Read file from the uploaded files
+        const fileStream = stream.Readable.from(file.filepath); // Path to file from formidable
 
-        // Upload the file
-        const viewLink = await uploadFile(authClient, file);
+        const viewLink = await uploadFile(authClient, {
+          originalname: file.originalFilename,
+          mimetype: file.mimetype,
+          buffer: fileStream,
+        });
 
-        // Return success with the Google Drive link
         return resolve({
           statusCode: 200,
           body: JSON.stringify({
