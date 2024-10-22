@@ -47,10 +47,7 @@ const LandingPage = () => {
 
   return (
     <div className="h-screen bg-white flex justify-center items-center relative">
-      <p className={`text-lg font-bold text-rose-gold animate-pulse ${showVideo ? 'hidden' : ''}`}>
-        {greetings[greetingIndex]}
-      </p>
-      <video
+       <video
         ref={videoRef}
         autoPlay
         muted
@@ -60,6 +57,11 @@ const LandingPage = () => {
         <source src={videoSource} type="video/mp4" />
         Your browser does not support the video tag.
       </video>
+      
+      <p className={`text-lg font-bold text-rose-gold animate-pulse ${showVideo ? 'hidden' : ''}`}>
+        {greetings[greetingIndex]}
+      </p>
+     
     </div>
   );
 };
