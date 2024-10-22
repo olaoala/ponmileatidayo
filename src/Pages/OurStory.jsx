@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion'; // For the animation
-import throwback1 from '../Assets/IMG_4468.PNG'; // Replace with your throwback image paths
+import throwback1 from '../Assets/IMG_4468.png'; // Replace with your throwback image paths
 import throwback2 from '../Assets/IMG_4467.PNG';
 import throwback3 from '../Assets/IMG_4469.PNG';
 
