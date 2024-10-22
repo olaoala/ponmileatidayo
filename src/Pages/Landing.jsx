@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
+import videoSourceWebm from '../Assets/1023.webm'; // Ensure correct imports
+import videoSourceMp4 from '../Assets/1025.mp4';  // Ensure correct imports
 
 const LandingPage = () => {
   const [greetingIndex, setGreetingIndex] = useState(0); // Track the current greeting index
@@ -50,8 +52,8 @@ const LandingPage = () => {
           className="absolute top-0 left-0 w-full h-full object-cover"
           onEnded={handleVideoEnd} // Trigger when video ends to start greetings
         >
-          <source src='../Assets/1023.webm' type="video/webm" />
-          <source src="../Assets/1025.mp4" type="video/mp4" />
+        <source src={videoSourceWebm} type="video/webm" />
+        <source src={videoSourceMp4} type="video/mp4" />
 
           Your browser does not support the video tag.
         </video>
