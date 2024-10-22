@@ -24,8 +24,7 @@ const UploadPage = () => {
       return;
     }
   
-    // Read the file as base64
-    const file = files[0]; // for simplicity, let's assume you're uploading one file
+    const file = files[0];
     const reader = new FileReader();
     reader.onloadend = async () => {
       const base64File = reader.result.split(',')[1]; // Remove the data URL prefix
@@ -37,13 +36,12 @@ const UploadPage = () => {
       };
   
       try {
-        const response = await axios.post('/.netlify/functions/upload', formData, {
+        await axios.post('/.netlify/functions/upload', formData, {
           headers: {
             'Content-Type': 'application/json',
           },
         });
-        const uploadedFileLink = response.data.viewLink;
-        console.log('File uploaded successfully:', uploadedFileLink);
+  
         setMessage('File uploaded successfully');
       } catch (error) {
         console.error('Error uploading file:', error);
