@@ -17,40 +17,46 @@ const UploadPage = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-  
+
     if (files.length === 0) {
       setMessage('Please upload at least one file.');
       return;
     }
-  
-    const file = files[0];
-    const reader = new FileReader();
-    reader.onloadend = async () => {
-      const base64File = reader.result.split(',')[1]; // Remove the data URL prefix
-  
-      const formData = {
-        fileName: file.name,
-        mimeType: file.type,
-        fileContent: base64File,
-      };
-  
-      try {
-        await axios.post('/.netlify/functions/upload', formData, {
-          headers: {
-            'Content-Type': 'application/json',
-          },
-        });
-  
-        setMessage('File uploaded successfully');
-      } catch (error) {
-        console.error('Error uploading file:', error);
-        setMessage('File upload failed.');
-      }
-    };
-  
-    reader.readAsDataURL(file);
+
+    const uploadPromises = files.map(async (file) => {
+      const reader = new FileReader();
+      return new Promise((resolve, reject) => {
+        reader.onloadend = async () => {
+          const base64File = reader.result.split(',')[1]; // Remove the data URL prefix
+          const formData = {
+            fileName: file.name,
+            mimeType: file.type,
+            fileContent: base64File,
+          };
+
+          try {
+            const response = await axios.post('/.netlify/functions/upload', formData, {
+              headers: {
+                'Content-Type': 'application/json',
+              },
+            });
+            resolve(response.data); // Resolve the promise with the response
+          } catch (error) {
+            console.error('Error uploading file:', error);
+            reject('File upload failed.');
+          }
+        };
+        reader.readAsDataURL(file);
+      });
+    });
+
+    try {
+      const results = await Promise.all(uploadPromises);
+      setMessage(`Files uploaded successfully: ${results.map(res => res.viewLink).join(', ')}`);
+    } catch (error) {
+      setMessage(error); // Set the error message if any upload fails
+    }
   };
-  
 
   return (
     <div className="flex flex-col items-center justify-center h-2/4 text-rose-dark-tint bg-gray-100 mb-10 p-4 shadow-lg rounded-lg">

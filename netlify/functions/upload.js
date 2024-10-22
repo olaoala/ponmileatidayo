@@ -35,9 +35,7 @@ async function authorize() {
   }
 }
 
-/**
- * Upload file to Google Drive
- */
+
 async function uploadFile(authClient, file) {
   try {
     const drive = google.drive({ version: 'v3', auth: authClient });
