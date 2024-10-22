@@ -23,38 +23,22 @@ const UploadPage = () => {
       return;
     }
 
-    const uploadPromises = files.map(async (file) => {
-      const reader = new FileReader();
-      return new Promise((resolve, reject) => {
-        reader.onloadend = async () => {
-          const base64File = reader.result.split(',')[1]; // Remove the data URL prefix
-          const formData = {
-            fileName: file.name,
-            mimeType: file.type,
-            fileContent: base64File,
-          };
-
-          try {
-            const response = await axios.post('/.netlify/functions/upload', formData, {
-              headers: {
-                'Content-Type': 'application/json',
-              },
-            });
-            resolve(response.data); // Resolve the promise with the response
-          } catch (error) {
-            console.error('Error uploading file:', error);
-            reject('File upload failed.');
-          }
-        };
-        reader.readAsDataURL(file);
-      });
+    const formData = new FormData();
+    files.forEach((file) => {
+      formData.append('files', file); // Append each file to the FormData
     });
 
     try {
-      const results = await Promise.all(uploadPromises);
-      setMessage(`Files uploaded successfully: ${results.map(res => res.viewLink).join(', ')}`);
+      const response = await axios.post('/.netlify/functions/upload', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data', // Set content type for file uploads
+        },
+      });
+
+      setMessage('Files uploaded successfully');
     } catch (error) {
-      setMessage(error); // Set the error message if any upload fails
+      console.error('Error uploading file:', error);
+      setMessage('File upload failed.');
     }
   };
 

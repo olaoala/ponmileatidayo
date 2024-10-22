@@ -1,8 +1,6 @@
 const { google } = require('googleapis');
 const stream = require('stream');
-const path = require('path');
 const process = require('process');
-const { createReadStream } = require('fs');
 
 // Scopes required for accessing Google Drive
 const SCOPES = ['https://www.googleapis.com/auth/drive.file'];
@@ -27,7 +25,7 @@ async function authorize() {
     // Authorize the client
     await jwtClient.authorize();
     console.log('Google API authorization successful');
-    
+
     return jwtClient;
   } catch (error) {
     console.error('Error authorizing Google API:', error);
@@ -35,15 +33,10 @@ async function authorize() {
   }
 }
 
-
 async function uploadFile(authClient, file) {
   try {
     const drive = google.drive({ version: 'v3', auth: authClient });
-    
-    // Create a readable stream from the file buffer
-    const bufferStream = new stream.PassThrough();
-    bufferStream.end(file.buffer);
-    
+
     // Upload file to Google Drive
     const response = await drive.files.create({
       requestBody: {
@@ -52,11 +45,10 @@ async function uploadFile(authClient, file) {
       },
       media: {
         mimeType: file.mimetype,
-        body: bufferStream,
+        body: file.stream, // Use the stream directly
       },
       fields: 'id, webViewLink', // Get file ID and view link
     });
-    
 
     // Make the file public
     await drive.permissions.create({
@@ -89,25 +81,34 @@ exports.handler = async (event) => {
     }
 
     // Parse the incoming file from the request body
-    const data = JSON.parse(event.body);
-    const file = {
-      buffer: Buffer.from(data.fileContent, 'base64'), // assuming the file content is sent as base64
-      originalname: data.fileName,
-      mimetype: data.mimeType,
-    };
+    const formData = new FormData(); // Create new FormData instance
+    const data = formData.parse(event.body); // Parse the incoming form data
 
-    // Authorize the Google API client
-    const authClient = await authorize();
+    // Loop through the files
+    const files = data.files; // Adjust based on how you parse the files
+    const links = [];
 
-    // Upload the file
-    const viewLink = await uploadFile(authClient, file);
+    for (const file of files) {
+      const fileData = {
+        stream: file, // The file stream directly
+        originalname: file.name,
+        mimetype: file.mimetype,
+      };
+
+      // Authorize the Google API client
+      const authClient = await authorize();
+
+      // Upload the file
+      const viewLink = await uploadFile(authClient, fileData);
+      links.push(viewLink);
+    }
 
     // Return success with the Google Drive link
     return {
       statusCode: 200,
       body: JSON.stringify({
-        message: 'File uploaded successfully',
-        viewLink: viewLink,
+        message: 'Files uploaded successfully',
+        viewLinks: links,
       }),
     };
   } catch (error) {
