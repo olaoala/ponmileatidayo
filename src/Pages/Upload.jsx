@@ -4,6 +4,7 @@ import axios from 'axios';
 const UploadPage = () => {
   const [files, setFiles] = useState([]);
   const [message, setMessage] = useState('');
+  const [showModal, setShowModal] = useState(false); // State to control modal visibility
 
   const handleFileChange = (e) => {
     const selectedFiles = Array.from(e.target.files);
@@ -36,10 +37,17 @@ const UploadPage = () => {
       });
       console.log('File uploaded successfully:', response.data);
       setMessage('Files uploaded successfully');
+
+      // Show modal on successful upload
+      setShowModal(true);
     } catch (error) {
       console.error('Error uploading file:', error);
       setMessage('File upload failed.');
     }
+  };
+
+  const closeModal = () => {
+    setShowModal(false); // Close the modal when the 'ok oo' button is clicked
   };
 
   return (
@@ -62,6 +70,21 @@ const UploadPage = () => {
         </button>
       </form>
       {message && <p className="mt-4 text-center text-lg">{message}</p>}
+
+      {/* Modal */}
+      {showModal && (
+        <div className="fixed inset-0 bg-gray-800 bg-opacity-75 flex justify-center items-center">
+          <div className="bg-white rounded-lg p-6 text-center shadow-lg max-w-sm">
+            <h3 className="text-lg font-bold mb-4">Chill till Saturday, we can't wait to see you!</h3>
+            <button
+              onClick={closeModal}
+              className="mt-4 px-6 py-2 bg-rose-gold text-white rounded-lg hover:bg-chocolate transition"
+            >
+              ok oo
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
