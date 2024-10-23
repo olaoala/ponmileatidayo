@@ -3,18 +3,18 @@ import React, { useState } from 'react';
 
 const UploadPage = () => {
   // const [files, setFiles] = useState([]);
-  const [message, setMessage] = useState('');
+  // const [message, setMessage] = useState('');
   const [showModal, setShowModal] = useState(false); // State to control modal visibility
 
-  const handleFileChange = (e) => {
-    const selectedFiles = Array.from(e.target.files);
-    if (selectedFiles.length > 3) {
-      setMessage('You can upload a maximum of 3 pictures.');
-    } else {
-      // setFiles(selectedFiles);
-      setMessage('');
-    }
-  };
+  // const handleFileChange = (e) => {
+  //   const selectedFiles = Array.from(e.target.files);
+  //   if (selectedFiles.length > 3) {
+  //     setMessage('You can upload a maximum of 3 pictures.');
+  //   } else {
+  //     // setFiles(selectedFiles);
+  //     setMessage('');
+  //   }
+  // };
 
   
 
@@ -63,7 +63,7 @@ const UploadPage = () => {
           type="file"
           accept="image/*"
           multiple
-          onChange={handleFileChange}
+          onChange=''
           className="m-4"
         />
         <p className="text-sm text-gray-600">Max 3 pictures allowed</p>
@@ -74,7 +74,7 @@ const UploadPage = () => {
           Upload
         </button>
       </form>
-      {message && <p className="mt-4 text-center text-lg">{message}</p>}
+      {/* {message && <p className="mt-4 text-center text-lg">{message}</p>} */}
 
       {/* Modal */}
       {showModal && (
@@ -85,7 +85,7 @@ const UploadPage = () => {
               onClick={closeModal}
               className="mt-4 px-6 py-2 bg-rose-gold text-white rounded-lg hover:bg-chocolate transition"
             >
-              ok oo
+              OK
             </button>
           </div>
         </div>
