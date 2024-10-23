@@ -65,6 +65,7 @@ const UploadPage = () => {
           type="file"
           accept="image/*"
           multiple
+          disabled
           onChange=''
           className="m-4"
         />
