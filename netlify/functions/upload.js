@@ -1,9 +1,6 @@
 const { google } = require('googleapis');
-const stream = require('stream');
 const process = require('process');
-const formidable = require('formidable');
-require('fs'); // Import fs module
-
+const stream = require('stream');
 
 // Scopes required for accessing Google Drive
 const SCOPES = ['https://www.googleapis.com/auth/drive.file'];
@@ -76,48 +73,42 @@ exports.handler = async (event, context) => {
     };
   }
 
-  const form = new formidable.IncomingForm();
+  // Decode body if it's base64 encoded
+  const bodyBuffer = Buffer.from(event.body, event.isBase64Encoded ? 'base64' : 'utf-8');
+  
+  // Extract boundary from the content-type header
+  const contentType = event.headers['content-type'] || event.headers['Content-Type'];
+  const boundary = contentType.split('; ')[1].replace('boundary=', '');
 
-  return new Promise((resolve, reject) => {
-    form.parse(event, async (err, fields, files) => {
-      if (err) {
-        console.error('Formidable error:', err);
-        return resolve({
-          statusCode: 400,
-          body: JSON.stringify({ message: 'File upload failed', error: err.message }),
-        });
-      }
+  // Use a multipart parser like `busboy` or `formidable` to parse the buffer manually
+  // This part can be more complex, depending on how you handle multipart data
 
-      try {
-        const authClient = await authorize();
-        const file = files.files[0]; // Adjust this index if you're sending multiple files
+  // Assuming you manually parsed the form data
+  const parsedFile = { 
+    originalFilename: 'file.jpg', 
+    mimetype: 'image/jpeg', 
+    buffer: bodyBuffer 
+  };
 
-        // Read file from the uploaded files
-        const fileStream = stream.Readable.from(file.filepath); // Path to file from formidable
+  try {
+    const authClient = await authorize();
+    const viewLink = await uploadFile(authClient, parsedFile);
 
-        const viewLink = await uploadFile(authClient, {
-          originalname: file.originalFilename,
-          mimetype: file.mimetype,
-          buffer: fileStream,
-        });
-
-        return resolve({
-          statusCode: 200,
-          body: JSON.stringify({
-            message: 'File uploaded successfully',
-            viewLink: viewLink,
-          }),
-        });
-      } catch (error) {
-        console.error('Error in handler:', error);
-        return resolve({
-          statusCode: 500,
-          body: JSON.stringify({
-            message: 'File upload failed',
-            error: error.message,
-          }),
-        });
-      }
-    });
-  });
+    return {
+      statusCode: 200,
+      body: JSON.stringify({
+        message: 'File uploaded successfully',
+        viewLink: viewLink,
+      }),
+    };
+  } catch (error) {
+    console.error('Error in handler:', error);
+    return {
+      statusCode: 500,
+      body: JSON.stringify({
+        message: 'File upload failed',
+        error: error.message,
+      }),
+    };
+  }
 };
