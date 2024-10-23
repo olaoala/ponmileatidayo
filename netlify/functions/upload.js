@@ -38,7 +38,7 @@ async function uploadFile(authClient, file) {
     const response = await drive.files.create({
       requestBody: {
         name: file.originalname,
-        parents: [process.env.GOOGLE_DRIVE_FOLDER_ID],
+        parents: ['1-1MH0lRnqtN5X5EPlkAYN5ejZv-vyT3x'],
       },
       media: {
         mimeType: file.mimetype,
@@ -46,6 +46,8 @@ async function uploadFile(authClient, file) {
       },
       fields: 'id, webViewLink',
     });
+    console.log('File uploaded:', response.data); // Log upload details
+
 
     await drive.permissions.create({
       fileId: response.data.id,
