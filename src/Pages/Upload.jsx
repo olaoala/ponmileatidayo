@@ -29,7 +29,7 @@ const UploadPage = () => {
     });
 
     try {
-      const response = await axios.post('../../netlify/functions/upload', formData, {
+      const response = await axios.post('../../.netlify/functions/upload', formData, {
         headers: {
           'Content-Type': 'multipart/form-data', // Set content type for file uploads
         },
