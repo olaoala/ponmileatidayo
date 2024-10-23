@@ -37,7 +37,7 @@ const HomePage = () => {
                 OMOGBOLAHAN <br />
               </p>
             </div>
-            <p className='font-cardo font-bold text-center text-lg'>#YoursInfinitely</p>
+            <p className='font-cardo font-bold text-center text-lg'>#Yoursinfinitely,OO24</p>
             <img className='relative mt-5 h-20' src={mainimg} alt="Main" />
           </div>
         </div>
