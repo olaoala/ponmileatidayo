@@ -71,7 +71,7 @@ const UploadPage = () => {
         <p className="text-sm text-gray-600">Max 3 pictures allowed</p>
         <button
           type="submit"
-          onSubmit={handleSubmit}
+          onClick={handleSubmit}
           className="inline-block mt-4 px-6 py-2 bg-rose-gold text-white rounded-lg hover:bg-chocolate transition"
         >
           Upload
