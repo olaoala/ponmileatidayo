@@ -53,7 +53,7 @@ const LandingPage = () => {
           onEnded={handleVideoEnd} // Trigger when video ends to start greetings
         >
         <source src={videoSourceWebm} type="video/webm" />
-        <source src={videoSourceMp4} type="video/mp4" />
+        {/* <source src={videoSourceMp4} type="video/mp4" /> */}
 
           Your browser does not support the video tag.
         </video>
