@@ -52,6 +52,7 @@ const UploadPage = () => {
     setShowModal(false); // Close the modal when the 'ok oo' button is clicked
   };
   const openModal = () => {
+    e.preventDefault(); // Prevent page reload
     setShowModal(true); // Close the modal when the 'ok oo' button is clicked
   };
 
