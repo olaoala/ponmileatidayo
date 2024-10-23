@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 // import axios from 'axios';
 
 const UploadPage = () => {
-  // const [files, setFiles] = useState([]);
+  const [files, setFiles] = useState([]);
   const [message, setMessage] = useState('');
   const [showModal, setShowModal] = useState(false); // State to control modal visibility
 
