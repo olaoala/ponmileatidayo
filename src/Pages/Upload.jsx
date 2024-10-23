@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
-import axios from 'axios';
+// import axios from 'axios';
 
 const UploadPage = () => {
-  const [files, setFiles] = useState([]);
+  // const [files, setFiles] = useState([]);
   const [message, setMessage] = useState('');
   const [showModal, setShowModal] = useState(false); // State to control modal visibility
 
@@ -16,44 +16,49 @@ const UploadPage = () => {
     }
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+  
 
-    if (files.length === 0) {
-      setMessage('Please upload at least one file.');
-      return;
-    }
+  // const handleSubmit = async (e) => {
+  //   e.preventDefault();
 
-    const formData = new FormData();
-    files.forEach((file) => {
-      formData.append('files', file); // Append each file to the FormData
-    });
+  //   if (files.length === 0) {
+  //     setMessage('Please upload at least one file.');
+  //     return;
+  //   }
 
-    try {
-      const response = await axios.post('../../.netlify/functions/upload', formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data', // Set content type for file uploads
-        },
-      });
-      console.log('File uploaded successfully:', response.data);
-      setMessage('Files uploaded successfully');
+  //   const formData = new FormData();
+  //   files.forEach((file) => {
+  //     formData.append('files', file); // Append each file to the FormData
+  //   });
 
-      // Show modal on successful upload
-      setShowModal(true);
-    } catch (error) {
-      console.error('Error uploading file:', error);
-      setMessage('File upload failed.');
-    }
-  };
+  //   try {
+  //     const response = await axios.post('../../.netlify/functions/upload', formData, {
+  //       headers: {
+  //         'Content-Type': 'multipart/form-data', // Set content type for file uploads
+  //       },
+  //     });
+  //     console.log('File uploaded successfully:', response.data);
+  //     setMessage('Files uploaded successfully');
+
+  //     // Show modal on successful upload
+  //     setShowModal(true);
+  //   } catch (error) {
+  //     console.error('Error uploading file:', error);
+  //     setMessage('File upload failed.');
+  //   }
+  // };
 
   const closeModal = () => {
     setShowModal(false); // Close the modal when the 'ok oo' button is clicked
+  };
+  const openModal = () => {
+    setShowModal(true); // Close the modal when the 'ok oo' button is clicked
   };
 
   return (
     <div className="flex flex-col items-center justify-center h-2/4 text-rose-dark-tint bg-gray-100 mb-10 p-4 shadow-lg rounded-lg">
       <h2 className="font-cardo text-xl font-bold m-1">Upload Your Wedding Pictures</h2>
-      <form onSubmit={handleSubmit} className="flex flex-col items-center">
+      <form onSubmit={openModal} className="flex flex-col items-center">
         <input
           type="file"
           accept="image/*"
