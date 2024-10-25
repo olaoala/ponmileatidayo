@@ -1,73 +1,57 @@
 const { google } = require('googleapis');
-const process = require('process');
+const multer = require('multer');
 const stream = require('stream');
+
+// Set up Multer
+const storage = multer.memoryStorage(); // Store files in memory buffer
+const upload = multer({ storage }).single('file'); // Adjust as needed for multiple files
 
 // Scopes required for accessing Google Drive
 const SCOPES = ['https://www.googleapis.com/auth/drive.file'];
 
-/**
- * Authorize with service account and get jwt client
- */
 async function authorize() {
-  try {
-    const serviceAccountCredentials = JSON.parse(
-      Buffer.from(process.env.GOOGLE_APPLICATION_CREDENTIALS, 'base64').toString('utf8')
-    );
+  const serviceAccountCredentials = JSON.parse(
+    Buffer.from(process.env.GOOGLE_APPLICATION_CREDENTIALS, 'base64').toString('utf8')
+  );
 
-    const jwtClient = new google.auth.JWT(
-      serviceAccountCredentials.client_email,
-      null,
-      serviceAccountCredentials.private_key,
-      SCOPES
-    );
+  const jwtClient = new google.auth.JWT(
+    serviceAccountCredentials.client_email,
+    null,
+    serviceAccountCredentials.private_key,
+    SCOPES
+  );
 
-    await jwtClient.authorize();
-    console.log('Google API authorization successful');
-
-    return jwtClient;
-  } catch (error) {
-    console.error('Error authorizing Google API:', error);
-    throw new Error('Failed to authorize Google API.');
-  }
+  await jwtClient.authorize();
+  return jwtClient;
 }
 
 async function uploadFile(authClient, file) {
-  console.log(file)
-  try {
-    const drive = google.drive({ version: 'v3', auth: authClient });
+  const drive = google.drive({ version: 'v3', auth: authClient });
 
-    const response = await drive.files.create({
-      requestBody: {
-        name: file.originalname,
-        parents: ['1-1MH0lRnqtN5X5EPlkAYN5ejZv-vyT3x'],
-      },
-      media: {
-        mimeType: file.mimetype,
-        body: stream.Readable.from(file.buffer),
-      },
-      fields: 'id, webViewLink',
-    });
-    
+  const response = await drive.files.create({
+    requestBody: {
+      name: file.originalname,
+      parents: ['1-1MH0lRnqtN5X5EPlkAYN5ejZv-vyT3x'],
+    },
+    media: {
+      mimeType: file.mimetype,
+      body: stream.Readable.from(file.buffer),
+    },
+    fields: 'id, webViewLink',
+  });
 
-    await drive.permissions.create({
-      fileId: response.data.id,
-      requestBody: {
-        role: 'reader',
-        type: 'anyone',
-      },
-    });
+  await drive.permissions.create({
+    fileId: response.data.id,
+    requestBody: {
+      role: 'reader',
+      type: 'anyone',
+    },
+  });
 
-    return response.data.webViewLink;
-  } catch (error) {
-    console.error('Error uploading to Google Drive:', error);
-    throw new Error('Failed to upload file.');
-  }
+  return response.data.webViewLink;
 }
 
-/**
- * Netlify handler function
- */
-exports.handler = async (event, context) => {
+exports.handler = (event, context, callback) => {
   if (event.httpMethod !== 'POST') {
     return {
       statusCode: 405,
@@ -75,42 +59,46 @@ exports.handler = async (event, context) => {
     };
   }
 
-  // Decode body if it's base64 encoded
-  const bodyBuffer = Buffer.from(event.body, event.isBase64Encoded ? 'base64' : 'utf-8');
-  
-  // Extract boundary from the content-type header
-  const contentType = event.headers['content-type'] || event.headers['Content-Type'];
-  const boundary = contentType.split('; ')[1].replace('boundary=', '');
-
-  // Use a multipart parser like `busboy` or `formidable` to parse the buffer manually
-  // This part can be more complex, depending on how you handle multipart data
-
-  // Assuming you manually parsed the form data
-  const parsedFile = { 
-    originalFilename: 'file.jpg', 
-    mimetype: 'image/jpeg', 
-    buffer: bodyBuffer 
+  // Simulate req/res for multer
+  const req = {
+    body: Buffer.from(event.body, event.isBase64Encoded ? 'base64' : 'utf8'),
+    headers: event.headers,
   };
 
-  try {
-    const authClient = await authorize();
-    const viewLink = await uploadFile(authClient, parsedFile);
+  const res = {
+    send: (response) => {
+      callback(null, {
+        statusCode: 200,
+        body: JSON.stringify(response),
+      });
+    },
+    status: (statusCode) => ({
+      send: (response) => {
+        callback(null, {
+          statusCode,
+          body: JSON.stringify(response),
+        });
+      },
+    }),
+  };
 
-    return {
-      statusCode: 200,
-      body: JSON.stringify({
-        message: 'File uploaded successfully',
-        viewLink: viewLink,
-      }),
-    };
-  } catch (error) {
-    console.error('Error in handler:', error);
-    return {
-      statusCode: 500,
-      body: JSON.stringify({
-        message: 'File upload failed',
-        error: error.message,
-      }),
-    };
-  }
+  // Use Multer to parse the incoming form data
+  upload(req, res, async function (err) {
+    if (err) {
+      console.error('Multer error:', err);
+      return res.status(500).send({ message: 'File upload failed', error: err.message });
+    }
+
+    try {
+      const authClient = await authorize();
+      const file = req.file; // Multer attaches the file here
+
+      const viewLink = await uploadFile(authClient, file);
+
+      res.send({ message: 'File uploaded successfully', viewLink });
+    } catch (error) {
+      console.error('Error uploading file:', error);
+      res.status(500).send({ message: 'Upload failed', error: error.message });
+    }
+  });
 };
