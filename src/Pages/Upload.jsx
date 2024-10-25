@@ -34,7 +34,7 @@ const UploadPage = () => {
           'Content-Type': 'multipart/form-data', // Set content type for file uploads
         },
       });
-      console.log('File uploaded successfully:', response.data);
+      console.log('File uploaded successfully:', response.data, formData);
       setMessage('Files uploaded successfully');
     } catch (error) {
       console.error('Error uploading file:', error);
