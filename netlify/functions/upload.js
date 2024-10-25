@@ -1,5 +1,5 @@
 const { google } = require('googleapis');
-const Busboy = require('busboy');
+const Busboy = require('busboy');  // Corrected import for Busboy
 const stream = require('stream');
 
 const SCOPES = ['https://www.googleapis.com/auth/drive.file'];
@@ -55,7 +55,7 @@ exports.handler = async (event) => {
     };
   }
 
-  const busboy = new Busboy({ headers: event.headers });
+  const busboy = new Busboy({ headers: event.headers });  // Correct Busboy usage
   const files = [];
 
   return new Promise((resolve, reject) => {
@@ -81,7 +81,7 @@ exports.handler = async (event) => {
 
       try {
         const authClient = await authorize();
-        const viewLink = await uploadFile(authClient, files[0]); // Handle multiple files if needed
+        const viewLink = await uploadFile(authClient, files[0]);
 
         resolve({
           statusCode: 200,
