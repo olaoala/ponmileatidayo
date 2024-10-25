@@ -7,6 +7,7 @@ const UploadPage = () => {
 
   const handleFileChange = (e) => {
     const selectedFiles = Array.from(e.target.files);
+    console.log('Selected files:', selectedFiles); // Check if files are captured correctly
     if (selectedFiles.length > 3) {
       setMessage('You can upload a maximum of 3 pictures.');
     } else {
@@ -14,6 +15,7 @@ const UploadPage = () => {
       setMessage('');
     }
   };
+  
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -23,6 +25,7 @@ const UploadPage = () => {
       return;
     }
 
+    console.log(files)
     const formData = new FormData();
     files.forEach((file) => {
       formData.append('files', file); // Append each file to the FormData
