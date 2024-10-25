@@ -28,6 +28,10 @@ const UploadPage = () => {
       formData.append('files', file); // Append each file to the FormData
     });
 
+    for (let pair of formData.entries()) {
+      console.log(pair[0] + ': ' + pair[1]); // This will log all the key-value pairs in FormData
+    }
+
     try {
       const response = await axios.post('../../.netlify/functions/upload', formData, {
         headers: {
