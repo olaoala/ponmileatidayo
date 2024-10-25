@@ -1,12 +1,7 @@
 const { google } = require('googleapis');
-const multer = require('multer');
+const Busboy = require('busboy');
 const stream = require('stream');
 
-// Set up Multer
-const storage = multer.memoryStorage(); // Store files in memory buffer
-const upload = multer({ storage }).single('file'); // Adjust as needed for multiple files
-
-// Scopes required for accessing Google Drive
 const SCOPES = ['https://www.googleapis.com/auth/drive.file'];
 
 async function authorize() {
@@ -22,6 +17,7 @@ async function authorize() {
   );
 
   await jwtClient.authorize();
+  console.log('Google API authorization successful');
   return jwtClient;
 }
 
@@ -51,7 +47,7 @@ async function uploadFile(authClient, file) {
   return response.data.webViewLink;
 }
 
-exports.handler = (event, context, callback) => {
+exports.handler = async (event) => {
   if (event.httpMethod !== 'POST') {
     return {
       statusCode: 405,
@@ -59,46 +55,53 @@ exports.handler = (event, context, callback) => {
     };
   }
 
-  // Simulate req/res for multer
-  const req = {
-    body: Buffer.from(event.body, event.isBase64Encoded ? 'base64' : 'utf8'),
-    headers: event.headers,
-  };
+  const busboy = new Busboy({ headers: event.headers });
+  const files = [];
 
-  const res = {
-    send: (response) => {
-      callback(null, {
-        statusCode: 200,
-        body: JSON.stringify(response),
-      });
-    },
-    status: (statusCode) => ({
-      send: (response) => {
-        callback(null, {
-          statusCode,
-          body: JSON.stringify(response),
+  return new Promise((resolve, reject) => {
+    busboy.on('file', (fieldname, file, filename, encoding, mimetype) => {
+      let fileBuffer = [];
+      file.on('data', (data) => fileBuffer.push(data));
+      file.on('end', () => {
+        files.push({
+          originalname: filename,
+          buffer: Buffer.concat(fileBuffer),
+          mimetype,
         });
-      },
-    }),
-  };
+      });
+    });
 
-  // Use Multer to parse the incoming form data
-  upload(req, res, async function (err) {
-    if (err) {
-      console.error('Multer error:', err);
-      return res.status(500).send({ message: 'File upload failed', error: err.message });
-    }
+    busboy.on('finish', async () => {
+      if (files.length === 0) {
+        return resolve({
+          statusCode: 400,
+          body: JSON.stringify({ message: 'No files uploaded' }),
+        });
+      }
 
-    try {
-      const authClient = await authorize();
-      const file = req.file; // Multer attaches the file here
+      try {
+        const authClient = await authorize();
+        const viewLink = await uploadFile(authClient, files[0]); // Handle multiple files if needed
 
-      const viewLink = await uploadFile(authClient, file);
+        resolve({
+          statusCode: 200,
+          body: JSON.stringify({
+            message: 'File uploaded successfully',
+            viewLink,
+          }),
+        });
+      } catch (error) {
+        console.error('Error uploading to Google Drive:', error);
+        reject({
+          statusCode: 500,
+          body: JSON.stringify({
+            message: 'File upload failed',
+            error: error.message,
+          }),
+        });
+      }
+    });
 
-      res.send({ message: 'File uploaded successfully', viewLink });
-    } catch (error) {
-      console.error('Error uploading file:', error);
-      res.status(500).send({ message: 'Upload failed', error: error.message });
-    }
+    busboy.end(Buffer.from(event.body, event.isBase64Encoded ? 'base64' : 'utf-8'));
   });
 };
