@@ -1,10 +1,13 @@
 const { google } = require('googleapis');
-const busboy = require('busboy');
+const process = require('process');
 const stream = require('stream');
 
 // Scopes required for accessing Google Drive
 const SCOPES = ['https://www.googleapis.com/auth/drive.file'];
 
+/**
+ * Authorize with service account and get jwt client
+ */
 async function authorize() {
   try {
     const serviceAccountCredentials = JSON.parse(
@@ -34,15 +37,16 @@ async function uploadFile(authClient, file) {
 
     const response = await drive.files.create({
       requestBody: {
-        name: file.filename,
-        parents: ['your-folder-id-here'],
+        name: file.originalname,
+        parents: ['1-1MH0lRnqtN5X5EPlkAYN5ejZv-vyT3x'],
       },
       media: {
-        mimeType: file.mimeType,
-        body: file.stream,
+        mimeType: file.mimetype,
+        body: stream.Readable.from(file.buffer),
       },
       fields: 'id, webViewLink',
     });
+    
 
     await drive.permissions.create({
       fileId: response.data.id,
@@ -59,6 +63,9 @@ async function uploadFile(authClient, file) {
   }
 }
 
+/**
+ * Netlify handler function
+ */
 exports.handler = async (event, context) => {
   if (event.httpMethod !== 'POST') {
     return {
@@ -67,41 +74,42 @@ exports.handler = async (event, context) => {
     };
   }
 
-  const bb = busboy({ headers: event.headers });
-  const files = [];
+  // Decode body if it's base64 encoded
+  const bodyBuffer = Buffer.from(event.body, event.isBase64Encoded ? 'base64' : 'utf-8');
+  
+  // Extract boundary from the content-type header
+  const contentType = event.headers['content-type'] || event.headers['Content-Type'];
+  const boundary = contentType.split('; ')[1].replace('boundary=', '');
 
-  const authClient = await authorize();
+  // Use a multipart parser like `busboy` or `formidable` to parse the buffer manually
+  // This part can be more complex, depending on how you handle multipart data
 
-  return new Promise((resolve, reject) => {
-    bb.on('file', (fieldname, file, filename, encoding, mimeType) => {
-      const fileData = {
-        filename,
-        mimeType,
-        stream: file, // The file stream
-      };
-      files.push(fileData);
-    });
+  // Assuming you manually parsed the form data
+  const parsedFile = { 
+    originalFilename: 'file.jpg', 
+    mimetype: 'image/jpeg', 
+    buffer: bodyBuffer 
+  };
 
-    bb.on('finish', async () => {
-      try {
-        const viewLinks = [];
-        for (const file of files) {
-          const viewLink = await uploadFile(authClient, file);
-          viewLinks.push(viewLink);
-        }
-        resolve({
-          statusCode: 200,
-          body: JSON.stringify({ message: 'Files uploaded successfully', viewLinks }),
-        });
-      } catch (error) {
-        console.error('Error handling upload:', error);
-        resolve({
-          statusCode: 500,
-          body: JSON.stringify({ message: 'File upload failed', error: error.message }),
-        });
-      }
-    });
+  try {
+    const authClient = await authorize();
+    const viewLink = await uploadFile(authClient, parsedFile);
 
-    bb.end(Buffer.from(event.body, event.isBase64Encoded ? 'base64' : 'utf8'));
-  });
+    return {
+      statusCode: 200,
+      body: JSON.stringify({
+        message: 'File uploaded successfully',
+        viewLink: viewLink,
+      }),
+    };
+  } catch (error) {
+    console.error('Error in handler:', error);
+    return {
+      statusCode: 500,
+      body: JSON.stringify({
+        message: 'File upload failed',
+        error: error.message,
+      }),
+    };
+  }
 };
