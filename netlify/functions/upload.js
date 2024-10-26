@@ -44,7 +44,11 @@ async function parseMultipartFormData(event) {
     const filenameMatch = filePart.match(/filename="(.+?)"/);
     const filename = filenameMatch ? filenameMatch[1] : 'uploaded-file';
 
-    return { filename, fileBuffer };
+    // Extract MIME type
+    const mimeTypeMatch = filePart.match(/Content-Type: (.+?)\r\n/);
+    const mimeType = mimeTypeMatch ? mimeTypeMatch[1] : 'application/octet-stream';
+
+    return { filename, fileBuffer, mimeType };
   });
 
   return files;
@@ -53,7 +57,7 @@ async function parseMultipartFormData(event) {
 /**
  * Upload file to Google Drive
  */
-async function uploadFile(authClient, fileName, fileBuffer) {
+async function uploadFile(authClient, fileName, fileBuffer, mimeType) {
   const drive = google.drive({ version: 'v3', auth: authClient });
 
   const fileStream = stream.Readable.from(fileBuffer);
@@ -64,7 +68,7 @@ async function uploadFile(authClient, fileName, fileBuffer) {
       parents: ['1-1MH0lRnqtN5X5EPlkAYN5ejZv-vyT3x'], // Update with your Google Drive folder ID
     },
     media: {
-      mimeType: 'image/*', // Adjust mimeType as necessary
+      mimeType: mimeType, // Use the detected MIME type
       body: fileStream,
     },
     fields: 'id, webViewLink',
@@ -103,8 +107,8 @@ exports.handler = async (event, context) => {
 
     // Upload each file to Google Drive
     const uploadedFiles = [];
-    for (const { filename, fileBuffer } of files) {
-      const viewLink = await uploadFile(authClient, filename, fileBuffer);
+    for (const { filename, fileBuffer, mimeType } of files) {
+      const viewLink = await uploadFile(authClient, filename, fileBuffer, mimeType);
       uploadedFiles.push({ filename, viewLink });
     }
 
