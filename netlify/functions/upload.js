@@ -1,9 +1,12 @@
 const { google } = require('googleapis');
-const Busboy = require('busboy');  // Corrected import for Busboy
 const stream = require('stream');
 
+// Google Drive Scopes
 const SCOPES = ['https://www.googleapis.com/auth/drive.file'];
 
+/**
+ * Authorize with Google service account
+ */
 async function authorize() {
   const serviceAccountCredentials = JSON.parse(
     Buffer.from(process.env.GOOGLE_APPLICATION_CREDENTIALS, 'base64').toString('utf8')
@@ -17,25 +20,54 @@ async function authorize() {
   );
 
   await jwtClient.authorize();
-  console.log('Google API authorization successful');
   return jwtClient;
 }
 
-async function uploadFile(authClient, file) {
+/**
+ * Parse multipart/form-data request without Busboy or Multer
+ */
+async function parseMultipartFormData(event) {
+  const contentType = event.headers['content-type'] || event.headers['Content-Type'];
+  const boundary = contentType.split('; ')[1].replace('boundary=', '');
+  const body = Buffer.from(event.body, event.isBase64Encoded ? 'base64' : 'utf-8');
+
+  const parts = body.split(`--${boundary}`);
+
+  // Extracting the file from the multipart body
+  const filePart = parts.find((part) => part.includes('Content-Type: image'));
+  if (!filePart) throw new Error('File not found in the request body');
+
+  const fileStartIndex = filePart.indexOf('\r\n\r\n') + 4;
+  const fileBuffer = filePart.slice(fileStartIndex, filePart.lastIndexOf('\r\n--'));
+
+  // Extract filename
+  const filenameMatch = filePart.match(/filename="(.+?)"/);
+  const filename = filenameMatch ? filenameMatch[1] : 'uploaded-file';
+
+  return { filename, fileBuffer };
+}
+
+/**
+ * Upload file to Google Drive
+ */
+async function uploadFile(authClient, fileName, fileBuffer) {
   const drive = google.drive({ version: 'v3', auth: authClient });
+
+  const fileStream = stream.Readable.from(fileBuffer);
 
   const response = await drive.files.create({
     requestBody: {
-      name: file.originalname,
-      parents: ['1-1MH0lRnqtN5X5EPlkAYN5ejZv-vyT3x'],
+      name: fileName,
+      parents: ['YOUR_GOOGLE_DRIVE_FOLDER_ID'],
     },
     media: {
-      mimeType: file.mimetype,
-      body: stream.Readable.from(file.buffer),
+      mimeType: 'image/jpeg', // Change this as per your file type
+      body: fileStream,
     },
     fields: 'id, webViewLink',
   });
 
+  // Make the file publicly accessible
   await drive.permissions.create({
     fileId: response.data.id,
     requestBody: {
@@ -47,7 +79,7 @@ async function uploadFile(authClient, file) {
   return response.data.webViewLink;
 }
 
-exports.handler = async (event) => {
+exports.handler = async (event, context) => {
   if (event.httpMethod !== 'POST') {
     return {
       statusCode: 405,
@@ -55,53 +87,31 @@ exports.handler = async (event) => {
     };
   }
 
-  const busboy = new Busboy({ headers: event.headers });  // Correct Busboy usage
-  const files = [];
+  try {
+    // Parse the multipart form data
+    const { filename, fileBuffer } = await parseMultipartFormData(event);
 
-  return new Promise((resolve, reject) => {
-    busboy.on('file', (fieldname, file, filename, encoding, mimetype) => {
-      let fileBuffer = [];
-      file.on('data', (data) => fileBuffer.push(data));
-      file.on('end', () => {
-        files.push({
-          originalname: filename,
-          buffer: Buffer.concat(fileBuffer),
-          mimetype,
-        });
-      });
-    });
+    // Google API authorization
+    const authClient = await authorize();
 
-    busboy.on('finish', async () => {
-      if (files.length === 0) {
-        return resolve({
-          statusCode: 400,
-          body: JSON.stringify({ message: 'No files uploaded' }),
-        });
-      }
+    // Upload the file to Google Drive
+    const viewLink = await uploadFile(authClient, filename, fileBuffer);
 
-      try {
-        const authClient = await authorize();
-        const viewLink = await uploadFile(authClient, files[0]);
-
-        resolve({
-          statusCode: 200,
-          body: JSON.stringify({
-            message: 'File uploaded successfully',
-            viewLink,
-          }),
-        });
-      } catch (error) {
-        console.error('Error uploading to Google Drive:', error);
-        reject({
-          statusCode: 500,
-          body: JSON.stringify({
-            message: 'File upload failed',
-            error: error.message,
-          }),
-        });
-      }
-    });
-
-    busboy.end(Buffer.from(event.body, event.isBase64Encoded ? 'base64' : 'utf-8'));
-  });
+    return {
+      statusCode: 200,
+      body: JSON.stringify({
+        message: 'File uploaded successfully',
+        viewLink: viewLink,
+      }),
+    };
+  } catch (error) {
+    console.error('Error:', error);
+    return {
+      statusCode: 500,
+      body: JSON.stringify({
+        message: 'File upload failed',
+        error: error.message,
+      }),
+    };
+  }
 };
