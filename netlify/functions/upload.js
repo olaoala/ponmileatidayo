@@ -24,7 +24,7 @@ async function authorize() {
 }
 
 /**
- * Parse multipart/form-data request manually
+ * Parse multipart/form-data request manually for multiple files
  */
 async function parseMultipartFormData(event) {
   const contentType = event.headers['content-type'] || event.headers['Content-Type'];
@@ -34,20 +34,20 @@ async function parseMultipartFormData(event) {
   // Convert the Buffer to a string for splitting
   const bodyString = bodyBuffer.toString();
 
-  const parts = bodyString.split(`--${boundary}`);
+  const parts = bodyString.split(`--${boundary}`).filter(part => part.includes('Content-Type: image'));
 
-  // Extracting the file from the multipart body
-  const filePart = parts.find((part) => part.includes('Content-Type: image'));
-  if (!filePart) throw new Error('File not found in the request body');
+  const files = parts.map((filePart) => {
+    const fileStartIndex = filePart.indexOf('\r\n\r\n') + 4;
+    const fileBuffer = Buffer.from(filePart.slice(fileStartIndex, filePart.lastIndexOf('\r\n--')));
 
-  const fileStartIndex = filePart.indexOf('\r\n\r\n') + 4;
-  const fileBuffer = Buffer.from(filePart.slice(fileStartIndex, filePart.lastIndexOf('\r\n--')));
+    // Extract filename
+    const filenameMatch = filePart.match(/filename="(.+?)"/);
+    const filename = filenameMatch ? filenameMatch[1] : 'uploaded-file';
 
-  // Extract filename
-  const filenameMatch = filePart.match(/filename="(.+?)"/);
-  const filename = filenameMatch ? filenameMatch[1] : 'uploaded-file';
+    return { filename, fileBuffer };
+  });
 
-  return { filename, fileBuffer };
+  return files;
 }
 
 /**
@@ -61,7 +61,7 @@ async function uploadFile(authClient, fileName, fileBuffer) {
   const response = await drive.files.create({
     requestBody: {
       name: fileName,
-      parents: ['1-1MH0lRnqtN5X5EPlkAYN5ejZv-vyT3x'],
+      parents: ['1-1MH0lRnqtN5X5EPlkAYN5ejZv-vyT3x'], // Update with your Google Drive folder ID
     },
     media: {
       mimeType: 'image/*', // Adjust mimeType as necessary
@@ -92,19 +92,27 @@ exports.handler = async (event, context) => {
 
   try {
     // Parse the multipart form data
-    const { filename, fileBuffer } = await parseMultipartFormData(event);
+    const files = await parseMultipartFormData(event);
+
+    if (!files || files.length === 0) {
+      throw new Error('No files found in the request');
+    }
 
     // Google API authorization
     const authClient = await authorize();
 
-    // Upload the file to Google Drive
-    const viewLink = await uploadFile(authClient, filename, fileBuffer);
+    // Upload each file to Google Drive
+    const uploadedFiles = [];
+    for (const { filename, fileBuffer } of files) {
+      const viewLink = await uploadFile(authClient, filename, fileBuffer);
+      uploadedFiles.push({ filename, viewLink });
+    }
 
     return {
       statusCode: 200,
       body: JSON.stringify({
-        message: 'File uploaded successfully',
-        viewLink: viewLink,
+        message: 'Files uploaded successfully',
+        uploadedFiles: uploadedFiles,
       }),
     };
   } catch (error) {
