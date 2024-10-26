@@ -24,21 +24,24 @@ async function authorize() {
 }
 
 /**
- * Parse multipart/form-data request without Busboy or Multer
+ * Parse multipart/form-data request manually
  */
 async function parseMultipartFormData(event) {
   const contentType = event.headers['content-type'] || event.headers['Content-Type'];
   const boundary = contentType.split('; ')[1].replace('boundary=', '');
-  const body = Buffer.from(event.body, event.isBase64Encoded ? 'base64' : 'utf-8');
+  const bodyBuffer = Buffer.from(event.body, event.isBase64Encoded ? 'base64' : 'utf-8');
+  
+  // Convert the Buffer to a string for splitting
+  const bodyString = bodyBuffer.toString();
 
-  const parts = body.split(`--${boundary}`);
+  const parts = bodyString.split(`--${boundary}`);
 
   // Extracting the file from the multipart body
   const filePart = parts.find((part) => part.includes('Content-Type: image'));
   if (!filePart) throw new Error('File not found in the request body');
 
   const fileStartIndex = filePart.indexOf('\r\n\r\n') + 4;
-  const fileBuffer = filePart.slice(fileStartIndex, filePart.lastIndexOf('\r\n--'));
+  const fileBuffer = Buffer.from(filePart.slice(fileStartIndex, filePart.lastIndexOf('\r\n--')));
 
   // Extract filename
   const filenameMatch = filePart.match(/filename="(.+?)"/);
@@ -58,10 +61,10 @@ async function uploadFile(authClient, fileName, fileBuffer) {
   const response = await drive.files.create({
     requestBody: {
       name: fileName,
-      parents: ['YOUR_GOOGLE_DRIVE_FOLDER_ID'],
+      parents: ['1-1MH0lRnqtN5X5EPlkAYN5ejZv-vyT3x'],
     },
     media: {
-      mimeType: 'image/jpeg', // Change this as per your file type
+      mimeType: 'image/*', // Adjust mimeType as necessary
       body: fileStream,
     },
     fields: 'id, webViewLink',
